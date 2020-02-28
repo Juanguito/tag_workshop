@@ -16,36 +16,25 @@ class MainProgram():
             complete_file_path = os.path.join(self.SOURCE_PATH, mp3_file.name)
 
             mp3 = self.open_mp3_file(complete_file_path)
-            tags = self.read_tags(mp3)
 
+            tags = self.read_tags(mp3)
             if len(tags) != 2 or not tags.get('song', False):
                 tags = self.get_artist_and_song_from_file_name(mp3_file)
-
             tags = self.capitalize(tags)
 
-            print('\nmp3_file.name: {}\n'.format(mp3_file.name))
             source_file_path = os.path.join(
                 self.SOURCE_PATH,
                 mp3_file.name,
             )
 
-            print('source_file_path.name: {}\n'.format(source_file_path))
-
-            destination_file_path = os.path.join(
-                self.DESTINATION_PATH,
-                '{}.mp3'.format(tags['song']),
-            )
-
-
-            print('destination_file_path: {}\n'.format(destination_file_path))
-
             new_path = self.copy_file(
                 source_file_path,
-                destination_file_path
+                self.DESTINATION_PATH,
+                '{}.mp3'.format(tags.get('song', mp3_file.name)),
             )
 
-            print('new_path: {}\n'.format(new_path))
-
+            new_mp3_file = self.open_mp3_file(new_path)
+            self.write_artist_and_song_tags(new_mp3_file, tags)
 
 
     def retrieve_mp3_files(self, path):
@@ -91,22 +80,28 @@ class MainProgram():
 
         return capitalized_dict
 
-    def copy_file(self, source, destination):
+    def copy_file(self, source, destination, file_name):
         if not os.path.exists(source):
             return None
 
-        destination_dir = (
-            os.path.dirname(destination)
-            if os.path.isfile(destination) else destination
-        )
+        if not os.path.exists(destination):
+            os.mkdir(destination)
 
-        if not os.path.exists(destination_dir):
-            os.mkdir(destination_dir)
+        destination_file_path = os.path.join(
+                destination,
+                file_name,
+            )
 
-        newPath = shutil.copy(source, destination)
-        print('newPath: {}\n'.format(newPath))
+        newPath = shutil.copy(source, destination_file_path)
 
         return newPath
+
+    def write_artist_and_song_tags(self, file, tags):
+        file.artist = tags['artist']
+        file.song = tags['song']
+        file.save()
+
+        return file
 
 
 if __name__ == '__main__':
